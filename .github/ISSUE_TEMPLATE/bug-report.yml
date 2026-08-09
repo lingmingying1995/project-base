@@ -1,0 +1,55 @@
+name: 问题反馈
+description: 用地基包时遇到问题、跑不通、规则有冲突
+title: "[问题] "
+labels: ["bug"]
+body:
+  - type: markdown
+    attributes:
+      value: |
+        感谢反馈！填下面几个问题，帮我们快速定位。
+
+  - type: textarea
+    id: what-happened
+    attributes:
+      label: 遇到了什么问题
+      description: 具体描述一下，比如"clone后跑操作手册，第2步报错"
+    validations:
+      required: true
+
+  - type: dropdown
+    id: tool
+    attributes:
+      label: 用的什么AI工具
+      options:
+        - opencode
+        - Cursor
+        - Claude Code
+        - 其他
+        - 没用AI工具（纯手动按操作手册做）
+    validations:
+      required: true
+
+  - type: input
+    id: step
+    attributes:
+      label: 卡在哪一步
+      description: 操作手册第几步 / 哪个文件 / 哪个Agent
+      placeholder: "例如：操作手册第3步，配Git时push报错"
+    validations:
+      required: true
+
+  - type: textarea
+    id: logs
+    attributes:
+      label: 报错信息或截图
+      description: 有的话贴上来，没有就写"无"
+    validations:
+      required: false
+
+  - type: input
+    id: os
+    attributes:
+      label: 操作系统
+      placeholder: "Windows / Mac / Linux"
+    validations:
+      required: true

@@ -1,0 +1,39 @@
+name: 规则建议
+description: 建议新增规则、修改现有规则、补充踩坑经验
+title: "[建议] "
+labels: ["enhancement"]
+body:
+  - type: markdown
+    attributes:
+      value: |
+        欢迎提规则建议！地基包的核心价值就是踩坑沉淀，你的经验可以让所有人受益。
+
+  - type: textarea
+    id: scenario
+    attributes:
+      label: 你遇到了什么场景
+      description: 具体描述你踩的坑或遇到的情况
+      placeholder: "例如：AI改了前端没改后端接口，我找了好久才发现"
+    validations:
+      required: true
+
+  - type: textarea
+    id: suggestion
+    attributes:
+      label: 你建议加什么规则
+      description: 你觉得该怎么管住AI？写出你想加的规则内容
+      placeholder: "例如：AI改了接口必须同步检查前端调用方"
+    validations:
+      required: true
+
+  - type: dropdown
+    id: rule-type
+    attributes:
+      label: 这条规则该放哪
+      options:
+        - AGENTS.md（开发规则，AI每次开工读）
+        - AI自检清单（AI完成后自检）
+        - 规则/目录下某个文件
+        - 不知道，你帮我判断
+    validations:
+      required: true
