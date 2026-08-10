@@ -15,7 +15,10 @@ param(
 $root = Split-Path $PSScriptRoot -Parent
 
 # 目录名用 char 拼接避免编码问题
-$产出 = [char]0x4EA7 + [char]0x51FA + [char]0x6210 + [char]0x679C
+# 注意：不同项目的产出目录名可能不同
+# workbench 是"工作台产出"，project-base 是"产出"
+# 如果你的项目用了别的名字，改下面这行
+$产出 = [char]0x4EA7 + [char]0x51FA
 $任务日志 = [char]0x4EFB + [char]0x52A1 + [char]0x65E5 + [char]0x5FD7
 $logDir = Join-Path (Join-Path $root $产出) $任务日志
 $logFile = Join-Path $logDir "$Task.md"
