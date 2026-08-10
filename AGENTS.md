@@ -186,3 +186,4 @@ AI 在开发中会反复犯同类问题。自检清单独立维护在 `AI自检�
 | 2026-08-03 | 新增《项目索引规则》；"先确认再动手"7条砍为2条精华版（2.3/2.7 删除，2.5/2.6 移入自检清单） |
 | 2026-08-04 | Git同步规则新增"用户说'提交'是什么意思"小节；新增《提示词手册.md》；开工前必读清单补提示词手册引用；操作手册新增"维护手册"章节；rule-tester 加维护清单同步检查项；新增 scripts/ 目录（sync/auto-summary 脚本模板 + plist 模板 + README）；自动化任务规则/新电脑初始化 改为引用 scripts/README.md |
 | 2026-08-06 | 新增 tech-director 技术总监 agent，建立双总监制衡机制；改造 project-director 职责收窄到需求+流程+业务；5个 agent 流程图同步更新；4个文档同步 8→9 个 agent |
+| 2026-08-10 | 新增提示词手册.md（补提交）+ scripts/write-task-log.ps1 + 根目录 sync.bat 实例版 + .gitignore；scripts/sync.bat 模板版加任务日志写入+goto 扁平结构修复；3 个 agent（project-director/tech-director/task-guardian）去 workbench 硬编码模板化；6 个 agent 同步模板化；新增 ProjectBaseSync Windows 计划任务 |

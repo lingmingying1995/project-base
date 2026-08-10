@@ -77,10 +77,12 @@ project-base/
 │   └── task-guardian.md        # 定时任务守护：执行归档/同步，失败自动诊断修复
 ├── scripts/                # 自动化任务脚本模板
 │   ├── sync.bat / sync.sh      # Git 自动同步（Windows / Mac）
+│   ├── write-task-log.ps1      # 通用任务日志写入器（sync.bat 调用，写到 产出/任务日志/）
 │   ├── auto-summary.bat / .js  # 每日对话归档
 │   ├── task-guardian-summary.bat / task-guardian-sync.bat  # Task Guardian 模式包装器
 │   ├── schtasks-xml/           # Windows 计划任务 XML 模板（支持路径含空格）
 │   ├── com.PROJECT_NAME.*.plist # Mac 定时任务配置
+│   ├── ocr-image.py            # OCR 图片文字提取（模型不支持识图时降级）
 │   └── README.md               # 使用说明（改占位符 + 配定时任务）
 ├── 规则/
 │   ├── 文件组织规则.md      # 一个内容单元一个独立文件 + 原话必留 + 对话记录 + 索引维护
