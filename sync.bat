@@ -56,45 +56,32 @@ exit /b 0
 del "%TEMP%\%PROJECT_NAME%_chg.txt" >nul 2>&1
 for /f %%B in ('git rev-list --count @ ^@{u} 2^>nul') do set AHEAD=%%B
 if "%AHEAD%"=="" set AHEAD=0
-if not "%AHEAD%"=="0" goto :pushonly
+if "%AHEAD%"=="0" goto :lognothing
+echo [%date% %time%] no change but ahead %AHEAD% commits, push only >> "%LOG%"
+set CHANGES=push %AHEAD% commits
+goto :dopush_nocommit
+
+:lognothing
 echo [%date% %time%] no change, no ahead >> "%LOG%"
 powershell -ExecutionPolicy Bypass -File "%~dp0scripts\write-task-log.ps1" -Task %PROJECT_NAME%Sync -Result success -Summary "no change"
 exit /b 0
-
-:pushonly
-echo [%date% %time%] no change but ahead %AHEAD% commits, push only >> "%LOG%"
-
-:pullfail
-echo [%date% %time%] pull rebase conflict, abort >> "%LOG%"
-REM Only abort if actually in a rebase (pull fail may not be a conflict)
-if exist ".git\rebase-merge\" git rebase --abort >> "%LOG%" 2>&1
-if exist ".git\rebase-apply\" git rebase --abort >> "%LOG%" 2>&1
-if "%STASHED%"=="1" git stash pop >> "%LOG%" 2>&1
-echo [%date% %time%] pull failed, give up (manual resolve needed) >> "%LOG%"
-powershell -ExecutionPolicy Bypass -File "%~dp0scripts\write-task-log.ps1" -Task %PROJECT_NAME%Sync -Result fail -Summary "pull conflict"
-exit /b 1
 
 :dopush
 git diff --cached --stat > "%TEMP%\%PROJECT_NAME%_stat.txt"
 set CHANGES=
 for /f "delims=" %%L in (%TEMP%\%PROJECT_NAME%_stat.txt) do set CHANGES=%%L
 del "%TEMP%\%PROJECT_NAME%_stat.txt" >nul 2>&1
-
 git commit -m "sync: %date:~0,10%" >> "%LOG%" 2>&1
 echo [%date% %time%] commit rc=%errorlevel% >> "%LOG%"
 
-:pushonly
+:dopush_nocommit
 set RETRY=0
 
 :pushloop
 git push >> "%LOG%" 2>&1
 if errorlevel 1 goto :pushfail
 echo [%date% %time%] push ok >> "%LOG%"
-if "%SZ%"=="0" goto :logpush
 powershell -ExecutionPolicy Bypass -File "%~dp0scripts\write-task-log.ps1" -Task %PROJECT_NAME%Sync -Result success -Summary "%CHANGES%"
-goto :done
-:logpush
-powershell -ExecutionPolicy Bypass -File "%~dp0scripts\write-task-log.ps1" -Task %PROJECT_NAME%Sync -Result success -Summary "push %AHEAD% commits"
 goto :done
 
 :pushfail
@@ -104,9 +91,20 @@ if not %RETRY% lss 3 goto :pushgiveup
 echo [%date% %time%] wait 5 min before retry... >> "%LOG%"
 ping 127.0.0.1 -n 300 >nul
 goto :pushloop
+
 :pushgiveup
 echo [%date% %time%] push failed after 3 retries, give up >> "%LOG%"
 powershell -ExecutionPolicy Bypass -File "%~dp0scripts\write-task-log.ps1" -Task %PROJECT_NAME%Sync -Result fail -Summary "push failed after 3 retries"
+exit /b 1
+
+:pullfail
+echo [%date% %time%] pull rebase conflict, abort >> "%LOG%"
+REM Only abort if actually in a rebase (pull fail may not be a conflict)
+if exist ".git\rebase-merge\" git rebase --abort >> "%LOG%" 2>&1
+if exist ".git\rebase-apply\" git rebase --abort >> "%LOG%" 2>&1
+if "%STASHED%"=="1" git stash pop >> "%LOG%" 2>&1
+echo [%date% %time%] pull failed, give up (manual resolve needed) >> "%LOG%"
+powershell -ExecutionPolicy Bypass -File "%~dp0scripts\write-task-log.ps1" -Task %PROJECT_NAME%Sync -Result fail -Summary "pull conflict"
 exit /b 1
 
 :done
