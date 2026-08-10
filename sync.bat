@@ -30,11 +30,10 @@ echo [%date% %time%] pull ok >> "%LOG%"
 REM Restore previously stashed local changes
 if not "%STASHED%"=="1" goto :afterpop
 git stash pop >> "%LOG%" 2>&1
-if errorlevel 1 (
-    echo [%date% %time%] stash pop conflict, keep in stash, give up >> "%LOG%"
-    powershell -ExecutionPolicy Bypass -File "%~dp0scripts\write-task-log.ps1" -Task %PROJECT_NAME%Sync -Result fail -Summary "stash pop conflict"
-    exit /b 1
-)
+if not errorlevel 1 goto :afterpop
+echo [%date% %time%] stash pop conflict, keep in stash, give up >> "%LOG%"
+powershell -ExecutionPolicy Bypass -File "%~dp0scripts\write-task-log.ps1" -Task %PROJECT_NAME%Sync -Result fail -Summary "stash pop conflict"
+exit /b 1
 :afterpop
 
 REM Re-check worktree changes (after stash pop)
@@ -42,27 +41,28 @@ git status --porcelain > "%TEMP%\%PROJECT_NAME%_chg.txt"
 for /f %%A in ("%TEMP%\%PROJECT_NAME%_chg.txt") do set SZ=%%~zA
 echo [%date% %time%] size=%SZ% >> "%LOG%"
 
-if "%SZ%"=="0" (
-    del "%TEMP%\%PROJECT_NAME%_chg.txt" >nul 2>&1
-    for /f %%B in ('git rev-list --count @ ^@{u} 2^>nul') do set AHEAD=%%B
-    if "%AHEAD%"=="" set AHEAD=0
-    if "%AHEAD%"=="0" (
-        echo [%date% %time%] no change, no ahead >> "%LOG%"
-        powershell -ExecutionPolicy Bypass -File "%~dp0scripts\write-task-log.ps1" -Task %PROJECT_NAME%Sync -Result success -Summary "no change"
-        exit /b 0
-    )
-    echo [%date% %time%] no change but ahead %AHEAD% commits, push only >> "%LOG%"
-    goto :pushonly
-)
+if "%SZ%"=="0" goto :nochange
 
 del "%TEMP%\%PROJECT_NAME%_chg.txt" >nul 2>&1
 echo [%date% %time%] has change, commit... >> "%LOG%"
 git add . >> "%LOG%" 2>&1
 git diff --cached --quiet
 if errorlevel 1 goto :dopush
-    echo [%date% %time%] no diff, skip >> "%LOG%"
-    powershell -ExecutionPolicy Bypass -File "%~dp0scripts\write-task-log.ps1" -Task %PROJECT_NAME%Sync -Result success -Summary "no diff"
-    exit /b 0
+echo [%date% %time%] no diff, skip >> "%LOG%"
+powershell -ExecutionPolicy Bypass -File "%~dp0scripts\write-task-log.ps1" -Task %PROJECT_NAME%Sync -Result success -Summary "no diff"
+exit /b 0
+
+:nochange
+del "%TEMP%\%PROJECT_NAME%_chg.txt" >nul 2>&1
+for /f %%B in ('git rev-list --count @ ^@{u} 2^>nul') do set AHEAD=%%B
+if "%AHEAD%"=="" set AHEAD=0
+if not "%AHEAD%"=="0" goto :pushonly
+echo [%date% %time%] no change, no ahead >> "%LOG%"
+powershell -ExecutionPolicy Bypass -File "%~dp0scripts\write-task-log.ps1" -Task %PROJECT_NAME%Sync -Result success -Summary "no change"
+exit /b 0
+
+:pushonly
+echo [%date% %time%] no change but ahead %AHEAD% commits, push only >> "%LOG%"
 
 :pullfail
 echo [%date% %time%] pull rebase conflict, abort >> "%LOG%"
@@ -89,23 +89,22 @@ set RETRY=0
 :pushloop
 git push >> "%LOG%" 2>&1
 if errorlevel 1 goto :pushfail
-:pushok
 echo [%date% %time%] push ok >> "%LOG%"
-if "%SZ%"=="0" (
-    powershell -ExecutionPolicy Bypass -File "%~dp0scripts\write-task-log.ps1" -Task %PROJECT_NAME%Sync -Result success -Summary "push %AHEAD% commits"
-) else (
-    powershell -ExecutionPolicy Bypass -File "%~dp0scripts\write-task-log.ps1" -Task %PROJECT_NAME%Sync -Result success -Summary "%CHANGES%"
-)
+if "%SZ%"=="0" goto :logpush
+powershell -ExecutionPolicy Bypass -File "%~dp0scripts\write-task-log.ps1" -Task %PROJECT_NAME%Sync -Result success -Summary "%CHANGES%"
+goto :done
+:logpush
+powershell -ExecutionPolicy Bypass -File "%~dp0scripts\write-task-log.ps1" -Task %PROJECT_NAME%Sync -Result success -Summary "push %AHEAD% commits"
 goto :done
 
 :pushfail
 set /a RETRY+=1
 echo [%date% %time%] push fail (retry %RETRY%/3) >> "%LOG%"
-if %RETRY% lss 3 (
-    echo [%date% %time%] wait 5 min before retry... >> "%LOG%"
-    ping 127.0.0.1 -n 300 >nul
-    goto :pushloop
-)
+if not %RETRY% lss 3 goto :pushgiveup
+echo [%date% %time%] wait 5 min before retry... >> "%LOG%"
+ping 127.0.0.1 -n 300 >nul
+goto :pushloop
+:pushgiveup
 echo [%date% %time%] push failed after 3 retries, give up >> "%LOG%"
 powershell -ExecutionPolicy Bypass -File "%~dp0scripts\write-task-log.ps1" -Task %PROJECT_NAME%Sync -Result fail -Summary "push failed after 3 retries"
 exit /b 1
