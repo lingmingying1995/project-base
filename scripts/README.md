@@ -9,8 +9,9 @@
 
 | 文件 | 作用 | 平台 |
 |------|------|------|
-| `sync.bat` | Git 自动同步（stash→pull --rebase→pop→commit→push，失败重试3次） | Windows |
-| `sync.sh` | Git 自动同步（逻辑同上） | Mac |
+| `sync.bat` | Git 自动同步（stash→pull --rebase→pop→commit→push，失败重试3次，自带任务日志写入） | Windows |
+| `sync.sh` | Git 自动同步（逻辑同上，Mac 版暂无任务日志写入） | Mac |
+| `write-task-log.ps1` | 通用任务执行日志写入器（sync.bat 等脚本调用，结果写到 `产出/任务日志/`） | Windows |
 | `auto-summary.bat` | 每日总结包装器（调用 auto-summary.js） | Windows |
 | `auto-summary.js` | 每日对话归档核心逻辑（读 opencode.db → 调 GLM 分析 → 写总结文件） | 跨平台 |
 | `com.PROJECT_NAME.auto-summary.plist` | Mac 定时任务配置（每日总结） | Mac |
@@ -50,8 +51,9 @@
 
 | 文件 | 改什么 |
 |------|--------|
-| `sync.bat` | 第7行 `set PROJECT_NAME=PROJECT_NAME` → 改成项目名（日志文件名用） |
-| `sync.sh` | 第8行 `PROJECT_NAME="PROJECT_NAME"` → 同上 |
+| `sync.bat` | 第11行 `set PROJECT_NAME=PROJECT_NAME` → 改成项目名（日志文件名用） |
+| `sync.sh` | 第9行 `PROJECT_NAME="PROJECT_NAME"` → 同上 |
+| `write-task-log.ps1` | 第18行 `$workMachines` 数组 → 改成你的工作电脑机器名（`echo %COMPUTERNAME%` 查看），用于区分 WORK/HOME 日志标识。不改也能跑，只是机器标识都算 HOME |
 | `auto-summary.bat` | 日志文件名里的 `PROJECT_NAME` |
 | `auto-summary.js` | `CONFIG.projectKeyword`（匹配 opencode.db 的 session directory）、`CONFIG.logFile`、prompt 里的项目名 |
 | 两个 plist 文件 | `Label`、`StandardOutPath`、`StandardErrorPath` 里的 `PROJECT_NAME`，以及 `WorkingDirectory` 改成 Mac 上的项目绝对路径 |

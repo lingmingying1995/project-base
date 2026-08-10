@@ -5,7 +5,6 @@
 
 ---
 
-<!-- source: project-base -->
 ## 一、存放位置：统一放全局
 
 所有 skill 统一放全局目录 `~/.config/opencode/skills/[skill名]/SKILL.md`，不区分项目级和全局级。
@@ -176,36 +175,7 @@ ln -s /path/to/主项目/.skills-mirror/skills ~/.config/opencode/skills
 ### Q：一个流程不确定做成 skill 还是 agent，怎么办？
 
 先不做。等这个流程跑了 2-3 次、套路稳定了，再固化。固化时按上面的标准判断。
-<!-- /source: project-base -->
 
 ---
 
-## 七、workbench 特有：软链机制的具体实现
-
-> workbench 是主项目，全局目录软链指向 workbench 的镜像目录。本节讲 workbench 怎么落地的。
-
-### 软链结构
-
-```
-~/.config/opencode/skills/  →  D:\AI programs\workbench\.skills-mirror\skills\
-~/.config/opencode/agents/  →  D:\AI programs\workbench\.skills-mirror\agents\
-```
-
-全局目录指向 workbench 的镜像目录，所以：
-- **写全局 skill = 写 workbench 的 `.skills-mirror/skills/`**
-- 全局 skill 跟 workbench 的 git 走，换电脑 git pull 即同步
-- workbench.html 的"个人 Skills"页面展示的也是 `.skills-mirror/skills/` 下的内容
-
-### 修改和删除（workbench 特有路径）
-
-- 改 skill：直接改 `.skills-mirror/skills/[skill名]/SKILL.md`（全局软链指向这里）
-- 删 skill：删 `.skills-mirror/skills/[skill名]/` 目录
-- 删完后扫一遍 AGENTS.md、workbench.html 等，看有没有引用这个 skill 的地方，一并清理
-
-### workbench 的 skill 构成
-
-workbench 的 `.skills-mirror/skills/` 里既有 workbench 专属的 skill（如 douyin-script、douyin-script-review），也有其他项目用的 skill（如 zentao-story-import、weekly-report）。统一放这里，通过 description 关键词区分触发，不靠目录位置区分。
-
----
-
-*规则目录 · 通用部分基于 project-base 地基包（第一至六节），workbench 特有实现见第七节*
+*规则目录 · 基于 project-base 地基包创建*
