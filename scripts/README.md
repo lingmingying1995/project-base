@@ -84,9 +84,9 @@ pip install pillow winrt-Windows.Media.Ocr winrt-Windows.Graphics.Imaging winrt-
 
 ## 配置定时任务
 
-### 方式一：Task Guardian 模式（推荐）
+### 方式一：Task Guardian 模式
 
-> Agent 自动诊断修复，失败时能自动处理常见问题（目录缺失、模型不可用、依赖缺失等）。
+> Agent 自动诊断修复，失败时能自动处理常见问题（目录缺失、模型不可用、依赖缺失等）。需要 opencode CLI 环境。
 
 **前置**：装 opencode CLI + 配 API Key + 放 task-guardian.md 到 `.opencode/agents/`
 
@@ -138,7 +138,7 @@ launchctl list | grep PROJECT_NAME
 
 | 电脑角色 | 每日总结 | Git 同步 | 说明 |
 |---------|---------|---------|------|
-| 工作电脑 | 18:30-18:40 | 18:50 | 下班前跑完 |
+| 工作电脑 | 18:40 | 18:50 | 下班前跑完 |
 | 家用电脑 | 23:30 | 23:50 | 睡前跑完 |
 
 家用电脑的每日总结用 `--machine=home` 参数，文件加 `-HOME` 后缀，避免和工作电脑的总结 git 冲突。
