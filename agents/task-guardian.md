@@ -24,7 +24,7 @@ Read the project's AGENTS.md to understand:
 - Log file paths
 
 If AGENTS.md doesn't specify, use these defaults:
-- Summary output: `每日总结/` or `成长日志/每日总结/` (check which exists)
+- Summary output: `产出/每日总结/` or `每日总结/` or `成长日志/每日总结/` (check which exists; files are archived in monthly subdirs: `YYYY-MM/每日总结-YYYY-MM-DD.md`)
 - Summary script: `scripts/auto-summary.js`
 - Sync script: `scripts/sync.bat` (Windows) or `scripts/sync.sh` (Mac)
 - Summary log: `%TEMP%/{project}_auto_summary.log` (Windows) or `/tmp/{project}_auto_summary.log` (Mac)
@@ -68,7 +68,7 @@ If AGENTS.md doesn't specify, use these defaults:
 | Failure Pattern | How to Diagnose | Fix |
 |----------------|-----------------|-----|
 | Output dir missing | Check summary output directory exists | `mkdir -p` to create |
-| Model unavailable | Check CONFIG.model in auto-summary.js; test API call | Change to available model (e.g. glm-5.1) |
+| Model unavailable | Check CONFIG.model in auto-summary.js; test API call | Change to available model (e.g. glm-5.2) |
 | sql.js load failure | Check `server/node_modules/sql.js` exists | `cd server && npm install` |
 | opencode.db locked | Check db file is readable | Wait 5s, retry |
 | bat path has spaces (Windows) | Check schtasks Action path has no quotes in /tr | Re-register with XML format |

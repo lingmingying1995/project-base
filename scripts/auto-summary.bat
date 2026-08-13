@@ -10,6 +10,7 @@ REM 用法：
 REM   auto-summary.bat              # 工作电脑（无后缀）
 REM   auto-summary.bat home         # 家用电脑（文件加 -HOME 后缀）
 REM   auto-summary.bat --machine=home  # 同上，完整参数写法
+REM   auto-summary.bat --date=2026-08-12  # 补跑指定日期
 
 set "ARGS=%*"
 if "%~1"=="" goto run

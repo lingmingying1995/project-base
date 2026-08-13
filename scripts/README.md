@@ -142,3 +142,5 @@ launchctl list | grep PROJECT_NAME
 | 家用电脑 | 23:30 | 23:50 | 睡前跑完 |
 
 家用电脑的每日总结用 `--machine=home` 参数，文件加 `-HOME` 后缀，避免和工作电脑的总结 git 冲突。
+
+补跑指定日期的总结用 `--date=YYYY-MM-DD` 参数（如 `node scripts/auto-summary.js --date=2026-08-12`），适合漏跑后手动补录。

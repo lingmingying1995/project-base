@@ -178,7 +178,51 @@ AI 在开发中会反复犯同类问题。自检清单独立维护在 `AI自检�
 
 ---
 
-## 九、文档变更记录
+<!-- source: project-base -->
+## 九、每日总结规则
+
+### 归档结构
+
+按月份子目录归档，每天单独一个文件：
+
+```
+产出/每日总结/
+├── README.md                          # 索引（日期+摘要+链接，倒序）
+└── 2026-08/
+    └── 每日总结-2026-08-12.md         # 当天文件（可多次追加）
+```
+
+### 两种生成方式
+
+1. **自动归档**：`scripts/auto-summary.js` 由计划任务触发，读 opencode.db 提取当天本项目对话，调 GLM 分析，写入月份子目录下的当天文件。当天文件已存在则追加，不覆盖。支持 `--machine=home` 后缀和 `--date=YYYY-MM-DD` 补跑。
+2. **实时记录**：AI 在对话中完成一个完整任务后，主动追加到当天文件（不存在则新建，月份子目录不存在则自动创建）。
+
+### 多台电脑
+
+| 电脑 | 触发方式 | 输出文件 |
+|------|---------|---------|
+| 工作电脑 | 计划任务自动跑 | `产出/每日总结/YYYY-MM/每日总结-YYYY-MM-DD.md` |
+| 家用电脑 | 手动跑 `auto-summary.bat home` | `产出/每日总结/YYYY-MM/每日总结-YYYY-MM-DD-HOME.md` |
+
+### README 索引维护
+
+AI 在生成每日总结时，自动往 `产出/每日总结/README.md` 索引表格顶部追加一行（日期 + 一句话摘要 + 链接）。
+
+### 去重机制
+
+脚本用 `.summary-sessions.json`（项目根目录）记录每天已处理的 session ID，同一天多次运行只处理新增会话，已处理的会跳过，避免重复归档。
+
+### 初始化注意
+
+clone 地基包后，`产出/每日总结/` 目录已含 README 索引模板。首次自动归档前需确认：
+1. `server/` 目录下已装 sql.js（`npm install sql.js`）
+2. `scripts/auto-summary.js` 里的 `PROJECT_NAME` 占位符已全部替换
+3. 已配置计划任务（详见 `规则/自动化任务规则.md`）
+<!-- /source: project-base -->
+
+---
+
+## 十、文档变更记录
 
 | 日期 | 变更 |
 |------|------|
@@ -187,3 +231,4 @@ AI 在开发中会反复犯同类问题。自检清单独立维护在 `AI自检�
 | 2026-08-04 | Git同步规则新增"用户说'提交'是什么意思"小节；新增《提示词手册.md》；开工前必读清单补提示词手册引用；操作手册新增"维护手册"章节；rule-tester 加维护清单同步检查项；新增 scripts/ 目录（sync/auto-summary 脚本模板 + plist 模板 + README）；自动化任务规则/新电脑初始化 改为引用 scripts/README.md |
 | 2026-08-06 | 新增 tech-director 技术总监 agent，建立双总监制衡机制；改造 project-director 职责收窄到需求+流程+业务；5个 agent 流程图同步更新；4个文档同步 8→9 个 agent |
 | 2026-08-10 | 新增提示词手册.md（补提交）+ scripts/write-task-log.ps1 + 根目录 sync.bat 实例版 + .gitignore；scripts/sync.bat 模板版加任务日志写入+goto 扁平结构修复；3 个 agent（project-director/tech-director/task-guardian）去 workbench 硬编码模板化；6 个 agent 同步模板化；新增 ProjectBaseSync Windows 计划任务 |
+| 2026-08-13 | 每日总结对齐 workbench 机制：新建 产出/每日总结/ 目录 + README.md 索引模板；auto-summary.js 模板改造（月份子目录归档+session去重+当天文件追加+glm-5.2+prompt对齐今日要点格式+支持--date补跑）；AGENTS.md 新增第九章每日总结规则（source: project-base），原第九章顺延为第十章 |

@@ -5,12 +5,13 @@
  *   1. 读取 opencode.db，提取今天本项目的对话内容
  *   2. 调用 GLM API 分析对话
  *   3. AI 判断是否有值得提炼的内容
- *   4. 有内容 → 写入 产出/每日总结/每日总结-YYYY-MM-DD.md
+ *   4. 有内容 → 写入 产出/每日总结/YYYY-MM/每日总结-YYYY-MM-DD.md（按月份子目录归档，当天文件追加）
  *      无内容 → 不建空文件
  *
  * 用法：
  *   node scripts/auto-summary.js              # 工作电脑（无后缀）
  *   node scripts\auto-summary.js --machine=home  # 家用电脑（文件加 -HOME 后缀）
+ *   node scripts/auto-summary.js --date=2026-08-12  # 补跑指定日期
  *
  * ============================================================
  * 使用前必改（搜索 PROJECT_NAME 改成你的项目英文名）：
@@ -46,6 +47,7 @@ const targetDate = dateArg ? dateArg.split('=')[1].trim() : null;
 
 const CONFIG = {
   dbPath: path.join(os.homedir(), '.local', 'share', 'opencode', 'opencode.db'),
+  projectDir: path.resolve(__dirname, '..'),
   // 【必改】PROJECT_NAME 改成你的项目英文名，用于匹配 opencode.db 里的 session directory
   projectKeyword: 'PROJECT_NAME',
   apiURL: 'https://api.miaoyun.net.cn/v1/chat/completions',
@@ -71,7 +73,7 @@ async function extractTodayConversations() {
   const buf = fs.readFileSync(CONFIG.dbPath);
   const db = new SQL.Database(buf);
 
-  const now = new Date();
+  const now = targetDate ? new Date(targetDate + 'T00:00:00') : new Date();
   const todayStr = targetDate || `${now.getFullYear()}-${String(now.getMonth() + 1).padStart(2, '0')}-${String(now.getDate()).padStart(2, '0')}`;
   const startOfDay = new Date(todayStr + 'T00:00:00').getTime();
   const endOfDay = new Date(todayStr + 'T23:59:59').getTime();
@@ -131,6 +133,7 @@ async function extractTodayConversations() {
 
     if (conversationText) {
       conversations.push({
+        sessionId,
         title: title || '无标题',
         text: conversationText
       });
@@ -151,39 +154,54 @@ function analyzeWithGLM(conversations, dateStr) {
       messages: [
         {
           role: 'system',
-          content: `你是 PROJECT_NAME 项目的开发记录助手。请分析今天的对话内容，提炼出有价值的每日总结。
+          content: `你是 PROJECT_NAME 项目的开发记录助手。请分析以下今天在本项目中发生的 opencode 对话内容，提炼出有价值的每日总结。
 
-要求：
-1. 只记录有认知增量的内容，不写流水账
-2. 格式用"今日要点"结构，每条 = 小标题 + 做了什么 + blockquote 沉淀的经验/踩的坑
-3. 如果今天没有有价值的对话内容，返回 "EMPTY" 两个字
-4. 完成的工作精简到5-6条，只保留有认知增量的
-5. 标题里的日期用 ${dateStr}，不要自己编
+判断标准（符合任一即可）：
+- 用户学了新概念并实践了
+- 用户踩了坑并解决了
+- 对话中有可复用的经验或方法论
+- 完成了一个完整的功能或任务
 
-输出格式：
-# 每日总结 - ${dateStr}
+如果**有值得提炼的内容**，请按以下格式输出（直接输出，不要加代码块）：
 
-> 主题：[今天的主要主题]
-
----
-
-## 今日要点
+### 今日要点
 
 **1. [事项小标题]**
 
-[做了什么，一段话说清]
+[做了什么，一段话说清。要写具体：用了什么技术/工具、改了什么文件、关键参数是什么，不要只写"搭了XX功能"]
 
-> [踩的坑 / 沉淀的经验 / 可复用的方法论，用 blockquote 框出]
+> [踩的坑 / 沉淀的经验 / 可复用的方法论，用 blockquote 框出。要写具体：根因是什么、怎么解决的、可复用的判断标准是什么]
 
 **2. [事项小标题]**
 
 ...
 
----
+### 变现相关的思考（如有）
+- xxx
 
-## 下一步
+### 其他（如有）
+- xxx
 
-- [ ] [下一步要做的事]`
+### 下一步
+- [ ] [待办事项，从对话中提取用户提到"接下来要做的"内容]
+
+格式要求：
+- 采用"今日要点"单段结构，同一件事的"做了什么 + 踩的坑 + 沉淀的经验"合并在一条里，不要拆成"完成的工作/提炼的知识点/可复用的经验"三段重复结构
+- 每条 = 小标题 + 做了什么 + blockquote 沉淀，三者一气呵成
+- blockquote 用 > 开头，写踩的坑、根因、可复用的经验、方法论等有认知增量的内容
+- 完成的工作精简到 5-6 条，只保留有认知增量的，纯执行动作不单列
+- **内容要具体**：写"改了 XX 文件的 XX 函数"，不写"改了后端代码"
+- **下一步从对话中提取**：用户在对话中提到的"接下来要做的""下次要XX"等内容
+
+如果**今天没有值得提炼的内容**（纯闲聊、重复确认、格式调整等），请只输出一句话：
+
+### 说明
+今日对话以日常操作为主，无特别值得提炼的内容。
+
+注意：
+- 只输出一个日期下的内容，不要自己加 ## 日期标题
+- 内容要简洁，不写流水账
+- 用中文`
         },
         {
           role: 'user',
@@ -193,7 +211,10 @@ function analyzeWithGLM(conversations, dateStr) {
     };
 
     const postData = JSON.stringify(prompt);
-    const req = https.request(CONFIG.apiURL, {
+    const url = new URL(CONFIG.apiURL);
+    const req = https.request({
+      hostname: url.hostname,
+      path: url.pathname,
       method: 'POST',
       headers: {
         'Content-Type': 'application/json',
@@ -227,11 +248,83 @@ function analyzeWithGLM(conversations, dateStr) {
   });
 }
 
+// ============ 写入总结文件（每天单独一个文件，按月份子目录归档） ============
+function getOutputFile(dateStr) {
+  const monthDir = dateStr.slice(0, 7); // "2026-08-12" → "2026-08"
+  return path.join(CONFIG.outputDir, monthDir, `每日总结-${dateStr}${CONFIG.machineSuffix}.md`);
+}
+
+function writeSummary(content, dateStr) {
+  const today = new Date();
+  if (!dateStr) {
+    dateStr = `${today.getFullYear()}-${String(today.getMonth() + 1).padStart(2, '0')}-${String(today.getDate()).padStart(2, '0')}`;
+  }
+  const outputFile = getOutputFile(dateStr);
+  // 确保月份子目录存在（按月归档结构：产出/每日总结/2026-08/）
+  const monthDir = path.dirname(outputFile);
+  if (!fs.existsSync(monthDir)) {
+    fs.mkdirSync(monthDir, { recursive: true });
+  }
+  // 时间格式：YYYY-MM-DD HH:mm:ss（用本地时区，纯数字避免编码问题）
+  const pad = n => String(n).padStart(2, '0');
+  const timeStr = `${today.getFullYear()}-${pad(today.getMonth() + 1)}-${pad(today.getDate())} ${pad(today.getHours())}:${pad(today.getMinutes())}:${pad(today.getSeconds())}`;
+  const machineNote = CONFIG.machineSuffix ? `\n> 机器标识：${CONFIG.machineSuffix.slice(1)}` : '';
+
+  if (fs.existsSync(outputFile)) {
+    // 当天文件已存在：更新头部时间 + 追加内容
+    let existing = fs.readFileSync(outputFile, 'utf8');
+    // 更新头部的归档时间（匹配 "在 YYYY-MM-DD HH:mm:ss 生成"）
+    existing = existing.replace(
+      /在 \d{4}-\d{2}-\d{2} \d{2}:\d{2}:\d{2} 生成/,
+      `在 ${timeStr} 生成`
+    );
+    // 去掉末尾的 --- 分隔符再追加
+    if (existing.endsWith('---\n')) {
+      existing = existing.slice(0, -4);
+    } else if (existing.endsWith('---')) {
+      existing = existing.slice(0, -3);
+    }
+    // 追加本次归档的时间戳 + 内容
+    existing += `\n\n<!-- 归档时间：${timeStr} -->\n\n${content}\n\n---\n`;
+    fs.writeFileSync(outputFile, existing, 'utf8');
+    log(`当天文件已存在，已追加内容到 ${outputFile}`);
+  } else {
+    // 当天首次生成
+    const header = `# 每日总结 - ${dateStr}${CONFIG.machineSuffix}\n\n> 自动归档：由 scripts/auto-summary.js 在 ${timeStr} 生成\n> 规则：AI 分析当天本项目的 opencode 对话，提炼值得沉淀的内容${machineNote}\n\n<!-- 归档时间：${timeStr} -->\n\n---\n\n`;
+    const newContent = header + content + '\n\n---\n';
+    fs.writeFileSync(outputFile, newContent, 'utf8');
+    log(`已生成当天文件：${outputFile}`);
+  }
+}
+
+// ============ 读取/写入已处理的 session 记录（用于去重） ============
+function getProcessedSessions(dateStr) {
+  const recordFile = path.join(CONFIG.projectDir, '.summary-sessions.json');
+  if (!fs.existsSync(recordFile)) return [];
+  try {
+    const data = JSON.parse(fs.readFileSync(recordFile, 'utf8'));
+    return data[dateStr] || [];
+  } catch {
+    return [];
+  }
+}
+
+function saveProcessedSessions(dateStr, sessionIds) {
+  const recordFile = path.join(CONFIG.projectDir, '.summary-sessions.json');
+  let data = {};
+  if (fs.existsSync(recordFile)) {
+    try { data = JSON.parse(fs.readFileSync(recordFile, 'utf8')); } catch {}
+  }
+  data[dateStr] = sessionIds;
+  fs.writeFileSync(recordFile, JSON.stringify(data, null, 2), 'utf8');
+}
+
 // ============ 主流程 ============
 async function main() {
   log('=== 每日总结开始 ===');
 
   try {
+    // 1. 提取今天的对话
     const { date, conversations } = await extractTodayConversations();
 
     if (conversations.length === 0) {
@@ -239,23 +332,25 @@ async function main() {
       return;
     }
 
-    log(`共 ${conversations.length} 个对话，开始调 GLM 分析`);
-
-    const summary = await analyzeWithGLM(conversations, date);
-
-    if (summary.trim() === 'EMPTY' || summary.includes('EMPTY')) {
-      log('GLM 判断今天没有值得提炼的内容，不生成总结文件');
+    // 2. 去重：过滤掉已处理过的 session
+    const processedIds = getProcessedSessions(date);
+    const newConversations = conversations.filter(c => !processedIds.includes(c.sessionId));
+    if (newConversations.length === 0) {
+      log(`今天的 ${conversations.length} 个会话均已处理过，跳过`);
       return;
     }
+    log(`新增 ${newConversations.length} 个会话（已处理 ${processedIds.length} 个）`);
 
-    const fileName = `每日总结-${date}${CONFIG.machineSuffix}.md`;
-    const filePath = path.join(CONFIG.outputDir, fileName);
+    // 3. 调 GLM 分析
+    log(`共 ${newConversations.length} 个对话，开始调 GLM 分析`);
+    const summary = await analyzeWithGLM(newConversations, date);
 
-    // 确保输出目录存在
-    fs.mkdirSync(CONFIG.outputDir, { recursive: true });
+    // 4. 写入文件（按月份子目录归档，当天文件追加）
+    writeSummary(summary.trim(), date);
 
-    fs.writeFileSync(filePath, summary, 'utf-8');
-    log(`总结已写入: ${filePath}`);
+    // 5. 记录已处理的 session
+    const allProcessed = [...processedIds, ...newConversations.map(c => c.sessionId)];
+    saveProcessedSessions(date, allProcessed);
 
     log('=== 每日总结完成 ===');
   } catch (e) {
